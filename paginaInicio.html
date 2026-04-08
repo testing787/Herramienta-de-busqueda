@@ -112,6 +112,11 @@
         function obtenerUbicacion() {
             const resultado = document.getElementById("resultado");
 
+            if (!resultado) {
+                console.error("No existe el elemento #resultado");
+                return;
+            }
+
             if (navigator.geolocation) {
 
                 resultado.innerHTML = "Solicitando ubicación...";
@@ -145,45 +150,6 @@
 
             } else {
                 resultado.innerHTML = "Tu navegador no soporta geolocalización.";
-            }
-        }
-        function obtenerUbicacion() {
-            const resultado = document.getElementById("resultado");
-
-            if (navigator.geolocation) {
-
-                resultado.innerHTML = "Solicitando ubicación...";
-
-                navigator.geolocation.getCurrentPosition(
-                    function (posicion) {
-                        const lat = posicion.coords.latitude;
-                        const lon = posicion.coords.longitude;
-                        // esto se enviaria a la bd
-                        resultado.innerHTML = `
-                    <strong>Latitud:</strong> ${lat} <br>
-                    <strong>Longitud:</strong> ${lon}
-                    
-                `;
-                    },
-                    function (error) {
-                        switch (error.code) {
-                            case error.PERMISSION_DENIED:
-                                resultado.innerHTML = "El usuario rechazó el permiso.";
-                                break;
-                            case error.POSITION_UNAVAILABLE:
-                                resultado.innerHTML = "Ubicación no disponible.";
-                                break;
-                            case error.TIMEOUT:
-                                resultado.innerHTML = "Tiempo de espera agotado.";
-                                break;
-                            default:
-                                resultado.innerHTML = "Error desconocido.";
-                        }
-                    }
-                );
-
-            } else {
-                resultado.innerHTML = "Tu navegador no soporta esta función.";
             }
         }
         const NotificadorInvasivo = {

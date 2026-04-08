@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,6 +8,7 @@
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body>
 
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -52,6 +54,59 @@
         </div>
     </div>
 
+    <div class="container text-center mt-5">
+        <h1>Obtener ubicación</h1>
+        <p>Haz clic en el botón para compartir tu ubicación</p>
+
+        <button class="btn btn-primary" onclick="obtenerUbicacion()">
+            Obtener ubicación
+        </button>
+
+        <div class="mt-4">
+            <p id="resultado"></p>
+        </div>
+    </div>
+
+    <script>
+        function obtenerUbicacion() {
+            const resultado = document.getElementById("resultado");
+
+            if (navigator.geolocation) {
+
+                resultado.innerHTML = "Solicitando ubicación...";
+
+                navigator.geolocation.getCurrentPosition(
+                    function (posicion) {
+                        const lat = posicion.coords.latitude;
+                        const lon = posicion.coords.longitude;
+
+                        resultado.innerHTML = `
+                    <strong>Latitud:</strong> ${lat} <br>
+                    <strong>Longitud:</strong> ${lon}
+                `;
+                    },
+                    function (error) {
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                resultado.innerHTML = "El usuario rechazó el permiso.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                resultado.innerHTML = "Ubicación no disponible.";
+                                break;
+                            case error.TIMEOUT:
+                                resultado.innerHTML = "Tiempo de espera agotado.";
+                                break;
+                            default:
+                                resultado.innerHTML = "Error desconocido.";
+                        }
+                    }
+                );
+
+            } else {
+                resultado.innerHTML = "Tu navegador no soporta geolocalización.";
+            }
+        }
+    </script>
     <footer class="bg-dark text-white text-center p-3 mt-5">
         <p>© 2026 MiSitio</p>
     </footer>
@@ -59,4 +114,5 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 </body>
+
 </html>

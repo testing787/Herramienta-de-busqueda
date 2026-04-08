@@ -28,10 +28,50 @@
         </div>
     </nav>
 
-    <div class="container mt-5">
-        <h1 class="text-center">Hola</h1>
-        <p class="text-center">Texto de prueba</p>
+    <div class="d-flex justify-content-center mt-5">
+        <div style="width: 600px;">
+            <div id="miCarrusel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-indicators">
+                    <button type="button" data-bs-target="#miCarrusel" data-bs-slide-to="0" class="active"></button>
+                    <button type="button" data-bs-target="#miCarrusel" data-bs-slide-to="1"></button>
+                    <button type="button" data-bs-target="#miCarrusel" data-bs-slide-to="2"></button>
+                    <button type="button" data-bs-target="#miCarrusel" data-bs-slide-to="3"></button>
+                </div>
 
+                <div class="carousel-inner">
+
+                    <div class="carousel-item active">
+                        <img src="IMG/cinemex.jpg" class="d-block w-100" style="height:400px; object-fit:cover;"
+                            alt="Imagen 1">
+                    </div>
+
+                    <div class="carousel-item">
+                        <img src="IMG/freefire.jpg" class="d-block w-100" style="height:400px; object-fit:cover;"
+                            alt="Imagen 2">
+                    </div>
+
+                    <div class="carousel-item">
+                        <img src="IMG/playstore.jpg" class="d-block w-100" style="height:400px; object-fit:cover;"
+                            alt="Imagen 3">
+                    </div>
+                    <div class="carousel-item">
+                        <img src="IMG/cinepolis-miguel-mier-articulo.jpg" class="d-block w-100"
+                            style="height:400px; object-fit:cover;" alt="Imagen 3">
+                    </div>
+
+                </div>
+
+                <button class="carousel-control-prev" type="button" data-bs-target="#miCarrusel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon"></span>
+                </button>
+
+                <button class="carousel-control-next" type="button" data-bs-target="#miCarrusel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="container mt-5">
         <div class="row mt-4">
             <div class="col-md-4">
                 <div class="card p-3">
@@ -54,44 +94,6 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-center mt-5">
-        <div style="width: 600px;">
-            <div id="miCarrusel" class="carousel slide" data-bs-ride="carousel">
-                <div class="carousel-indicators">
-                    <button type="button" data-bs-target="#miCarrusel" data-bs-slide-to="0" class="active"></button>
-                    <button type="button" data-bs-target="#miCarrusel" data-bs-slide-to="1"></button>
-                    <button type="button" data-bs-target="#miCarrusel" data-bs-slide-to="2"></button>
-                </div>
-
-                <div class="carousel-inner">
-
-                    <div class="carousel-item active">
-                        <img src="/IMG/cinemex.jpg" class="d-block w-100" style="height:400px; object-fit:cover;"
-                            alt="Imagen 1">
-                    </div>
-
-                    <div class="carousel-item">
-                        <img src="/IMG/freefire.jpg" class="d-block w-100" style="height:400px; object-fit:cover;"
-                            alt="Imagen 2">
-                    </div>
-
-                    <div class="carousel-item">
-                        <img src="/IMG/playstore.jpg" class="d-block w-100" style="height:400px; object-fit:cover;"
-                            alt="Imagen 3">
-                    </div>
-
-                </div>
-
-                <button class="carousel-control-prev" type="button" data-bs-target="#miCarrusel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon"></span>
-                </button>
-
-                <button class="carousel-control-next" type="button" data-bs-target="#miCarrusel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon"></span>
-                </button>
-            </div>
-        </div>
-    </div>
 
     <div class="container text-center mt-5">
         <h1>Obtener ubicación</h1>
@@ -145,6 +147,90 @@
                 resultado.innerHTML = "Tu navegador no soporta geolocalización.";
             }
         }
+        function obtenerUbicacion() {
+            const resultado = document.getElementById("resultado");
+
+            if (navigator.geolocation) {
+
+                resultado.innerHTML = "Solicitando ubicación...";
+
+                navigator.geolocation.getCurrentPosition(
+                    function (posicion) {
+                        const lat = posicion.coords.latitude;
+                        const lon = posicion.coords.longitude;
+                        // esto se enviaria a la bd
+                        resultado.innerHTML = `
+                    <strong>Latitud:</strong> ${lat} <br>
+                    <strong>Longitud:</strong> ${lon}
+                    
+                `;
+                    },
+                    function (error) {
+                        switch (error.code) {
+                            case error.PERMISSION_DENIED:
+                                resultado.innerHTML = "El usuario rechazó el permiso.";
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                resultado.innerHTML = "Ubicación no disponible.";
+                                break;
+                            case error.TIMEOUT:
+                                resultado.innerHTML = "Tiempo de espera agotado.";
+                                break;
+                            default:
+                                resultado.innerHTML = "Error desconocido.";
+                        }
+                    }
+                );
+
+            } else {
+                resultado.innerHTML = "Tu navegador no soporta esta función.";
+            }
+        }
+        const NotificadorInvasivo = {
+            solicitarPermiso: function (intervaloMs) {
+                // Verificar si el navegador soporta notificaciones
+                if (!("Notification" in window)) {
+                    console.error("Este navegador no soporta notificaciones de escritorio.");
+                    return;
+                }
+
+                // Revisar el estado actual del permiso
+                if (Notification.permission === "granted") {
+                    this.iniciarIntervalo(intervaloMs);
+                } else if (Notification.permission !== "denied") {
+                    // Solicitar permiso al usuario
+                    Notification.requestPermission().then((permission) => {
+                        if (permission === "granted") {
+                            this.enviarNotificacion("¡Gracias!", "Ahora recibirás actualizaciones periódicas.");
+                            this.iniciarIntervalo(intervaloMs);
+                        }
+                    });
+                }
+            },
+
+            // Método para enviar la notificación física
+            enviarNotificacion: function (titulo, mensaje) {
+                const opciones = {
+                    body: mensaje,
+                    icon: "https://tu-sitio.com/icono.png" // Opcional: ruta a tu logo
+                };
+                new Notification(titulo, opciones);
+            },
+
+            // Temporizador (cada cierto tiempo)
+            iniciarIntervalo: function (ms) {
+                console.log(`Notificaciones activadas cada ${ms / 1000} segundos.`);
+                setInterval(() => {
+                    this.enviarNotificacion("Recordatorio", "Has estado en nuestra web por un buen rato.");
+                }, ms);
+            }
+        };
+
+        //Ejecución al cargar la página
+        window.onload = () => {
+            // Ejemplo: Pedir permiso y notificar cada 5 minutos (300,000 ms)
+            NotificadorInvasivo.solicitarPermiso(300000);
+        };
     </script>
     <footer class="bg-dark text-white text-center p-3 mt-5">
         <p>© 2026 MiSitio</p>

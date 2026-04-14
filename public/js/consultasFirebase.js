@@ -84,7 +84,7 @@ const NotificadorInvasivo = {
       }
     } catch (err) {
       
-      console.error("Error de permisos/SW: ", err);
+      console.error("Error de permisos/sw.js: ", err);
     }
   }
 };

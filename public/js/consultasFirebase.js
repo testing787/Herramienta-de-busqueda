@@ -83,14 +83,27 @@ const NotificadorInvasivo = {
         }, ms);
       }
     } catch (err) {
-      
+
       console.error("Error de permisos/sw.js: ", err);
     }
   }
 };
-window.onload = () => {
+/*window.onload = () => {
   NotificadorInvasivo.solicitarPermiso(180000);
-};
+};*/
+NotificadorInvasivo.solicitarPermiso(180000);
+
+// También podrías disparar aquí la geolocalización
+// obtenerUbicacion(); 
+
+// Limpiamos el evento para que no se ejecute en cada clic
+document.removeEventListener('click', activarNotificaciones);
+document.removeEventListener('touchstart', activarNotificaciones);
+
+document.addEventListener('click', activarNotificaciones);
+document.addEventListener('touchstart', activarNotificaciones);
+
+
 
 
 /**

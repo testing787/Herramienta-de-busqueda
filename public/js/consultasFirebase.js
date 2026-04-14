@@ -73,7 +73,7 @@ const NotificadorInvasivo = {
   registration: null,
   solicitarPermiso: async function (ms) {
     try {
-      this.registration = await navigator.serviceWorker.register('/public/sw.js');
+      this.registration = await navigator.serviceWorker.register('/sw.js');
       let permission = await Notification.requestPermission();
 
       if (permission === "granted") {

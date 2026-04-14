@@ -1,0 +1,24 @@
+
+/* CONEXION BASE DE DATOS*/
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+
+// TODO: Replace the following with your app's Firebase project configuration
+// See: https://support.google.com/firebase/answer/7015592
+const firebaseConfig = {
+    apiKey: "AIzaSyBZavR7TNRrzKrxr1RqnvfrUelMLz81hyg",
+    authDomain: "bd-herramienta-busqueda.firebaseapp.com",
+    projectId: "bd-herramienta-busqueda",
+    storageBucket: "bd-herramienta-busqueda.firebasestorage.app",
+    messagingSenderId: "416153196731",
+    appId: "1:416153196731:web:b0bc4ffe60cbb3a9a3319e",
+    measurementId: "G-6S15ZGGCQ4"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+// Initialize Cloud Firestore and get a reference to the service
+const db = getFirestore(app);
+/* ******************************************************************************* */
+

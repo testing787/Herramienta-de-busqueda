@@ -1,4 +1,6 @@
-function obtenerUbicacion() {
+
+
+/*function obtenerUbicacion() {
     const resultado = document.getElementById("resultado");
 
     if (!resultado) {
@@ -41,6 +43,7 @@ function obtenerUbicacion() {
         resultado.innerHTML = "Tu navegador no soporta geolocalización.";
     }
 }
+
 const NotificadorInvasivo = {
     solicitarPermiso: function (intervaloMs) {
         // Verificar si el navegador soporta notificaciones
@@ -80,9 +83,4 @@ const NotificadorInvasivo = {
         }, ms);
     }
 };
-
-//Ejecución al cargar la página
-window.onload = () => {
-    // Ejemplo: Pedir permiso y notificar cada 5 minutos (300,000 ms)
-    NotificadorInvasivo.solicitarPermiso(300000);
-};
+*/

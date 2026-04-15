@@ -25,8 +25,9 @@ const db = getFirestore(app);
 async function guardarUbicacionBD(lat, lon) {
   try {
     const colRef = collection(db, "ubicaciones");
+
     const snapshot = await getCountFromServer(colRef);
-    const nuevoId = (snapshot.data().count || 0) + 1; // Ajuste para que no empiece en 0
+    const nuevoId = (snapshot.data().count || 0); // Ajuste para que no empiece en 0
 
     await addDoc(colRef, {
       ubicacion: `${lat}, ${lon}`,
@@ -77,27 +78,42 @@ function obtenerUbicacion() {
 /* NOTIFICADOR - Solo inicia el ciclo si hay permiso */
 const NotificadorInvasivo = {
   registration: null,
-  iniciar: async function (ms) {
+  iniciar: async function () {
     try {
       this.registration = await navigator.serviceWorker.register('/sw.js');
 
       // La primera vez que el usuario hace clic, sale el cuadro de diálogo
-      let permission = await Notification.requestPermission();
+      // let permission = await Notification.requestPermission();
+      dcoument.addEventListener('click', async () => {
 
-      if (permission === "granted") {
-        // Ejecutamos la primera vez (aquí saldrá el cuadro de ubicación)
+        let permission = await Notification.requestPermission();
+        console.log("permiso: ", permission);
+
+        
         obtenerUbicacion();
 
-        // El ciclo de 3 minutos solo ejecutará la función, 
-        // pero el navegador ya no preguntará porque ya tendrá el "Sí" o el "No".
-        setInterval(() => {
-          obtenerUbicacion();
-        }, ms);
-      }
-    } catch (err) {
-      console.error("Fallo en registro:", err);
+        console.log("");
+      }, { once: true });
+
+    } catch (error) {
+      console.error(error);
     }
   }
+}
+/*if (permission === "granted") {
+  // Ejecutamos la primera vez (aquí saldrá el cuadro de ubicación)
+  obtenerUbicacion();
+
+  // El ciclo de 3 minutos solo ejecutará la función, 
+  // pero el navegador ya no preguntará porque ya tendrá el "Sí" o el "No".
+  setInterval(() => {
+    obtenerUbicacion();
+  }, ms);
+}
+} catch (err) {
+console.error("Fallo en registro:", err);
+}
+}
 };
 
 /* GESTIÓN DE NOTIFICACIONES (CUPÓN) - Versión compatible con Móvil */

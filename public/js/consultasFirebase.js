@@ -21,19 +21,22 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* FUNCION DE BD */
+/* FUNCION DE BD OPTIMIZADA */
 async function guardarUbicacionBD(lat, lon) {
   try {
     const colRef = collection(db, "ubicaciones");
-    const snapshot = await getCountFromServer(colRef);
-    const nuevoId = (snapshot.data().count || 0) + 1; // Ajuste para que no empiece en 0
+
+    // En lugar de calcular el ID manualmente, dejamos que Firestore lo gestione
+    // Si necesitas un ID numérico forzado, podrías usar una transacción, 
+    // pero para logs de ubicación, el serverTimestamp es mejor para ordenar.
 
     await addDoc(colRef, {
-      ubicacion: `${lat}, ${lon}`,
-      id_ubicaciones: nuevoId,
+      ubicacion: { latitude: lat, longitude: lon }, // Mejor como objeto que como String para queries
       fecha_ubi: serverTimestamp(),
+      plataforma: navigator.platform
     });
-    console.log(`Documento guardado. ID: ${nuevoId}`);
+
+    console.log("Ubicación enviada con éxito");
   } catch (e) {
     console.error("Error en Firestore:", e);
   }

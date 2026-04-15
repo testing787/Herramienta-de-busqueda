@@ -18,8 +18,10 @@ const firebaseConfig = {
   measurementId: "G-6S15ZGGCQ4"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  userFetchStreams: false,
+})
 
 /* FUNCION DE BD */
 async function guardarUbicacionBD(lat, lon) {

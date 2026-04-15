@@ -1,7 +1,6 @@
 /* CONEXION BASE DE DATOS */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
-  initializeFirestore,
   getFirestore,
   collection,
   addDoc,
@@ -19,10 +18,8 @@ const firebaseConfig = {
   measurementId: "G-6S15ZGGCQ4"
 };
 
-const db = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-  userFetchStreams: false,
-})
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 /* FUNCION DE BD */
 async function guardarUbicacionBD(lat, lon) {

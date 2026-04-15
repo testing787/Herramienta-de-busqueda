@@ -84,7 +84,7 @@ const NotificadorInvasivo = {
 
       // La primera vez que el usuario hace clic, sale el cuadro de diálogo
       // let permission = await Notification.requestPermission();
-      dcoument.addEventListener('click', async () => {
+      document.addEventListener('click', async () => {
 
         let permission = await Notification.requestPermission();
         console.log("permiso: ", permission);

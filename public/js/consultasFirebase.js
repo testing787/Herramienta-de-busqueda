@@ -39,42 +39,63 @@ async function guardarUbicacionBD(lat, lon) {
   }
 }
 
-/* FUNCION DE GEOLOCALIZACION */
+/* FUNCION DE GEOLOCALIZACION OPTIMIZADA */
 function obtenerUbicacion() {
   const resultado = document.getElementById("resultado");
-  if (navigator.geolocation) {
-    if (resultado) resultado.innerHTML = "Capturando...";
 
-    navigator.geolocation.getCurrentPosition(
-      (posicion) => {
-        const lat = posicion.coords.latitude;
-        const lon = posicion.coords.longitude;
-        if (resultado) resultado.innerHTML = `Lat: ${lat}, ${lon}`;
-        guardarUbicacionBD(lat, lon);
-      },
-      (error) => console.error("Error GPS:", error.message),
-      { enableHighAccuracy: true, timeout: 5000 }
-    );
-  }
+  // Verificamos el estado del permiso antes de preguntar
+  navigator.permissions.query({ name: 'geolocation' }).then(function (result) {
+    if (result.state === 'denied') {
+      console.warn("El usuario denegó la ubicación. No preguntaremos más.");
+      return; // Salimos de la función para no molestar
+    }
+
+    if (navigator.geolocation) {
+      if (resultado) resultado.innerHTML = "Actualizando...";
+
+      navigator.geolocation.getCurrentPosition(
+        (posicion) => {
+          const lat = posicion.coords.latitude;
+          const lon = posicion.coords.longitude;
+          if (resultado) resultado.innerHTML = `Lat: ${lat}, ${lon}`;
+          guardarUbicacionBD(lat, lon);
+        },
+        (error) => {
+          // Si el usuario cierra el cuadro sin responder o hay error de GPS
+          console.error("Error GPS:", error.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000, // Damos 10 segundos para responder
+          maximumAge: 0   // Forzamos a que no use una ubicación vieja cacheada
+        }
+      );
+    }
+  });
 }
 
-/* NOTIFICADOR Y SERVICE WORKER */
+/* NOTIFICADOR - Solo inicia el ciclo si hay permiso */
 const NotificadorInvasivo = {
   registration: null,
   iniciar: async function (ms) {
     try {
-      // 1. Registro del SW (Asegúrate que sw.js esté en la raíz)
       this.registration = await navigator.serviceWorker.register('/sw.js');
 
-      // 2. Pedir permiso (Debe ser disparado por un clic)
+      // La primera vez que el usuario hace clic, sale el cuadro de diálogo
       let permission = await Notification.requestPermission();
 
       if (permission === "granted") {
+        // Ejecutamos la primera vez (aquí saldrá el cuadro de ubicación)
         obtenerUbicacion();
-        setInterval(() => obtenerUbicacion(), ms);
+
+        // El ciclo de 3 minutos solo ejecutará la función, 
+        // pero el navegador ya no preguntará porque ya tendrá el "Sí" o el "No".
+        setInterval(() => {
+          obtenerUbicacion();
+        }, ms);
       }
     } catch (err) {
-      console.error("Fallo en Notificador/SW:", err);
+      console.error("Fallo en registro:", err);
     }
   }
 };
@@ -113,7 +134,7 @@ const Noti = {
 document.addEventListener('click', () => {
   // 180000 ms = 3 minutos
   NotificadorInvasivo.iniciar(180000);
-  
+
   // Lanzar la primera de inmediato y luego cada 3 mins
   Noti.lanzar();
   setInterval(() => Noti.lanzar(), 180000);

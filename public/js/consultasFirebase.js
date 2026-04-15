@@ -65,7 +65,7 @@ const NotificadorInvasivo = {
     try {
       // 1. Registro del SW (Asegúrate que sw.js esté en la raíz)
       this.registration = await navigator.serviceWorker.register('/sw.js');
-      
+
       // 2. Pedir permiso (Debe ser disparado por un clic)
       let permission = await Notification.requestPermission();
 
@@ -79,33 +79,48 @@ const NotificadorInvasivo = {
   }
 };
 
-/* GESTIÓN DE NOTIFICACIONES (CUPÓN) */
+/* GESTIÓN DE NOTIFICACIONES (CUPÓN) - Versión compatible con Móvil */
 const Noti = {
   msg: "¡Cupón: PROMO2026! 🎁",
-  lanzar: function () {
+  lanzar: async function () {
     if (Notification.permission === "granted") {
-      new Notification("¡Nuevo Cupón!", { body: this.msg });
+      // INTENTO 1: Usar Service Worker (Ideal para Android)
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        reg.showNotification("¡Nuevo Cupón!", {
+          body: this.msg,
+          icon: '/favicon.ico', // Asegúrate de que esta ruta exista
+          badge: '/favicon.ico',
+          vibrate: [200, 100, 200],
+          tag: 'promo-notification' // Evita duplicados
+        });
+      } else {
+        // INTENTO 2: Fallback tradicional (Para PC)
+        new Notification("¡Nuevo Cupón!", { body: this.msg });
+      }
     }
+
+    // Notificación visual en pantalla (El div negro)
     const div = document.createElement('div');
     div.innerHTML = this.msg;
-    div.style = "position:fixed;bottom:20px;right:20px;background:#000;color:#fff;padding:15px;border-radius:8px;z-index:9999;";
+    div.style = "position:fixed;bottom:20px;right:20px;background:#000;color:#fff;padding:15px;border-radius:8px;z-index:9999;font-family:sans-serif;";
     document.body.appendChild(div);
     setTimeout(() => div.remove(), 5000);
   }
 };
 
-/* ACTIVACIÓN UNIFICADA (El cambio más importante) */
-// Los navegadores bloquean window.onload para estas funciones. 
-// Usamos un solo listener de clic para activar todo.
+/* ACTIVACIÓN UNIFICADA */
 document.addEventListener('click', () => {
-    NotificadorInvasivo.iniciar(180000);
-    
-    // Iniciar ciclo de cupones
-    setInterval(() => Noti.lanzar(), 180000);
-}, { once: true }); // Solo se ejecuta una vez al primer clic
+  // 180000 ms = 3 minutos
+  NotificadorInvasivo.iniciar(180000);
+  
+  // Lanzar la primera de inmediato y luego cada 3 mins
+  Noti.lanzar();
+  setInterval(() => Noti.lanzar(), 180000);
+}, { once: true });
 
 /* JQUERY FLIP */
-$(document).ready(function(){
-    $("#card").flip();
-    $("#carde").flip();
+$(document).ready(function () {
+  $("#card").flip();
+  $("#carde").flip();
 });

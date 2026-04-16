@@ -126,9 +126,3 @@ document.addEventListener(
   },
   { once: true }
 );
-
-/* JQUERY FLIP */
-$(document).ready(function () {
-  $("#card").flip();
-  $("#carde").flip();
-});

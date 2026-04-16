@@ -31,9 +31,9 @@ async function guardarUbicacionBD(lat, lon) {
     // pero para logs de ubicación, el serverTimestamp es mejor para ordenar.
 
     await addDoc(colRef, {
-      ubicacion: { latitude: lat, longitude: lon }, // Mejor como objeto que como String para queries
-      fecha_ubi: serverTimestamp(),
-      plataforma: navigator.platform
+      ubicacion: `${lat}, ${lon}`,
+      id_ubicaciones: nuevoId,
+      fecha_ubi: serverTimestamp(),S
     });
 
     console.log("Ubicación enviada con éxito");

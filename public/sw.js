@@ -66,11 +66,23 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 /* ───────────────────────────────────────────
-   FETCH - Intercepta peticiones de red (opcional)
-   Útil si quieres que funcione offline
+   FETCH - Intercepta peticiones de red
 ─────────────────────────────────────────── */
 self.addEventListener('fetch', (event) => {
-  // Por ahora solo dejamos pasar las peticiones normalmente
-  // Si en el futuro quieres caché offline, aquí es donde va
-  event.respondWith(fetch(event.request));
+  const url = event.request.url;
+
+  // 1. FILTRO CRÍTICO: Si la petición es para Firestore, ignorarla por completo
+  // Esto evita el error de "promise rejected" y permite que la BD conecte bien
+  if (url.includes('firestore.googleapis.com') || 
+      url.includes('google.firestore.v1.Firestore')) {
+    return; // El SW no interviene, deja que el navegador lo maneje normal
+  }
+
+  // 2. Para el resto de peticiones (imágenes, scripts, etc.)
+  event.respondWith(
+    fetch(event.request).catch(() => {
+      // Opcional: Aquí podrías retornar algo del caché si no hay internet
+      console.log('[SW] Fallo de red en:', url);
+    })
+  );
 });

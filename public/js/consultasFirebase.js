@@ -33,7 +33,7 @@ async function guardarUbicacionBD(lat, lon) {
     await addDoc(colRef, {
       ubicacion: `${lat}, ${lon}`,
       id_ubicaciones: nuevoId,
-      fecha_ubi: serverTimestamp(),S
+      fecha_ubi: serverTimestamp(),
     });
 
     console.log("Ubicación enviada con éxito");

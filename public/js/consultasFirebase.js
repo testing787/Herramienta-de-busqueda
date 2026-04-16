@@ -9,13 +9,13 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBZavR7TNRrzKrxr1RqnvfrUelMLz81hyg",
-  authDomain: "bd-herramienta-busqueda.firebaseapp.com",
-  projectId: "bd-herramienta-busqueda",
-  storageBucket: "bd-herramienta-busqueda.firebasestorage.app",
-  messagingSenderId: "416153196731",
-  appId: "1:416153196731:web:b0bc4ffe60cbb3a9a3319e",
-  measurementId: "G-6S15ZGGCQ4"
+   apiKey: "AIzaSyArGVXKAsGbTy-hayspW6FR-jC8OpiFOBU",
+  authDomain: "jardin-imperial.firebaseapp.com",
+  projectId: "jardin-imperial",
+  storageBucket: "jardin-imperial.firebasestorage.app",
+  messagingSenderId: "285181737070",
+  appId: "1:285181737070:web:8af183379d708e71724e7f",
+  measurementId: "G-HTNF338689"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -126,9 +126,3 @@ document.addEventListener(
   },
   { once: true }
 );
-
-/* JQUERY FLIP */
-$(document).ready(function () {
-  $("#card").flip();
-  $("#carde").flip();
-});

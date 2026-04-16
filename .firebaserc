@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "herramienta-de-busqueda-e0207"
-  }
+    "default": "herramienta-de-busqueda-e0207",
+    "JardinImperial": "jardin-imperial"
+  },
+  "targets": {},
+  "etags": {}
 }

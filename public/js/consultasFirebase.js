@@ -31,9 +31,8 @@ async function guardarUbicacionBD(lat, lon) {
       fecha_ubi: serverTimestamp(),
     });
 
-    console.log("Ubicación guardada:", lat, lon);
   } catch (e) {
-    console.error("Error en Firestore:", e);
+    console.error("Error ", e);
   }
 }
 

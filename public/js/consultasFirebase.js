@@ -58,7 +58,7 @@ function obtenerUbicacion() {
     },
     {
       enableHighAccuracy: true,
-      timeout: 10000,
+      timeout: 180000,
       maximumAge: 0,
     }
   );
